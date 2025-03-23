@@ -1,0 +1,61 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environment
+venv/
+.env
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# VSCode settings
+.vscode/
+
+# Alembic
+alembic/versions/*.pyc
+alembic/versions/*.pyo
+alembic/versions/__pycache__/
+
+# Docker
+*.log
+docker-compose.override.yml
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+coverage.xml
+*.cover
+.hypothesis/
+
+# Pytest cache
+.pytest_cache/
+
+# MyPy cache
+.mypy_cache/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Redis dump
+dump.rdb
+
+# Mac OS
+.DS_Store
