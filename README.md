@@ -2,6 +2,11 @@
 
 Простой API-сервис для сокращения ссылок. Поддерживает регистрацию пользователей, генерацию коротких ссылок, статистику по переходам и управление своими ссылками.
 
+## Демо
+
+Сервис развернут на Render:
+**[https://url-shortener-4an4.onrender.com/docs](https://url-shortener-4an4.onrender.com/docs)**
+
 ## Описание API
 
 ### Аутентификация
@@ -19,12 +24,14 @@
 - `DELETE /links/cleanup?days=N` — удаление неиспользуемых ссылок старше N дней.
 
 ### Авторизация
-Для защищённых эндпоинтов используется JWT токен (Bearer).  
+Для защищённых эндпоинтов используется JWT токен (Bearer).
 Полученный токен необходимо указать в Swagger UI через кнопку "Authorize" или передавать в заголовке:
 
 ```
 Authorization: Bearer <your_token>
 ```
+
+---
 
 ## Примеры запросов
 
@@ -50,11 +57,13 @@ POST /links/shorten
 {
   "original_url": "https://example.com",
   "custom_alias": "example123",
-  "expires_at": "2025-03-01T23:59:59"
+  "expires_at": "2025-12-31T23:59:59"
 }
 ```
 
-## Инструкция по запуску
+---
+
+## Инструкция по запуску локально
 
 ### 1. Клонирование репозитория
 ```bash
@@ -65,7 +74,7 @@ cd url-shortener
 ### 2. Установка зависимостей
 ```bash
 python -m venv venv
-source venv/bin/activate
+source venv/bin/activate  # или Windows: venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
@@ -74,12 +83,12 @@ pip install -r requirements.txt
 Создайте `.env` файл в корне и укажите:
 
 ```
-DATABASE_URL=<url>
-REDIS_URL=<url>
-SECRET_KEY=<key>
+DATABASE_URL=postgresql+asyncpg://user:password@host:port/dbname
+REDIS_URL=redis://localhost:6379
+SECRET_KEY=your-secret-key
 ```
 
-### 4. Создание таблиц (через Alembic)
+### 4. Инициализация БД
 ```bash
 alembic upgrade head
 ```
@@ -89,7 +98,7 @@ alembic upgrade head
 uvicorn app.main:app --reload
 ```
 
-Приложение будет доступно по адресу:
+Документация будет доступна по адресу:
 ```
 http://127.0.0.1:8000/docs
 ```
