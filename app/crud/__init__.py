@@ -8,26 +8,26 @@ from sqlalchemy.future import select
 def generate_short_code(length=6):
     return ''.join(random.choices(string.ascii_letters + string.digits, k=length))
 
-async def create_link(db: AsyncSession, link_data, current_user: User):
-    if link_data.custom_alias:
-        result = await db.execute(select(Link).where(Link.short_code == link_data.custom_alias))
-        existing = result.scalar_one_or_none()
-        if existing:
-            raise HTTPException(status_code=400, detail="Custom alias already in use")
+async def create_link(db, link_data, user):
+    # Если short_code не указан — генерируем
+    short_code = link_data.short_code or await generate_unique_code(db)
 
-    short_code = link_data.custom_alias or generate_short_code()
-    
-    db_link = Link(
+    new_link = Link(
         original_url=link_data.original_url,
         short_code=short_code,
-        created_at=datetime.utcnow(),
         expires_at=link_data.expires_at,
-        click_count=0,
-        last_click=None,
-        user_id=current_user.id
+        user_id=user.id
     )
-    
-    db.add(db_link)
+
+    db.add(new_link)
     await db.commit()
-    await db.refresh(db_link)
-    return db_link
+    await db.refresh(new_link)
+    return new_link
+
+async def generate_unique_code(db, length=6):
+    for _ in range(5):  # до 5 попыток
+        code = generate_short_code(length)
+        result = await db.execute(select(Link).where(Link.short_code == code))
+        if not result.scalar_one_or_none():
+            return code
+    raise HTTPException(status_code=500, detail="Failed to generate unique short code")

@@ -1,10 +1,10 @@
+from pydantic import BaseModel, HttpUrl
 from typing import Optional
 from datetime import datetime
-from pydantic import BaseModel
 
 class LinkCreate(BaseModel):
-    original_url: str
-    custom_alias: Optional[str] = None
+    original_url: HttpUrl
+    short_code: Optional[str] = None
     expires_at: Optional[datetime] = None
 
 class LinkInfo(BaseModel):
