@@ -9,11 +9,11 @@ def generate_short_code(length=6):
     return ''.join(random.choices(string.ascii_letters + string.digits, k=length))
 
 async def create_link(db, link_data, user):
-    # Если short_code не указан — генерируем
+    # Если short_code не указан - генерируем
     short_code = link_data.short_code or await generate_unique_code(db)
 
     new_link = Link(
-        original_url=link_data.original_url,
+        original_url=str(link_data.original_url),
         short_code=short_code,
         expires_at=link_data.expires_at,
         user_id=user.id
