@@ -25,46 +25,70 @@ async def shorten_link(link: LinkCreate, db: AsyncSession = Depends(get_db), cur
 
 @router.get("/{short_code}")
 async def redirect_link(short_code: str, db: AsyncSession = Depends(get_db)):
-    redis = await get_redis()
-    cached_url = await redis.get(short_code)
+    cached_url = None
+    try:
+        redis = await get_redis()
+        cached_url = await redis.get(short_code)
+    except Exception as e:
+        print(f"[Redis] GET failed: {e}")
+
     if cached_url:
         return RedirectResponse(cached_url)
+
     result = await db.execute(select(Link).where(Link.short_code == short_code))
     link = result.scalar_one_or_none()
     if not link:
         raise HTTPException(status_code=404, detail="Short link not found")
     if link.expires_at and link.expires_at < datetime.utcnow():
         raise HTTPException(status_code=410, detail="Link has expired")
+
     link.click_count += 1
     link.last_click = datetime.utcnow()
     await db.commit()
-    await redis.setex(short_code, 3600, link.original_url)
+
+    try:
+        redis = await get_redis()
+        await redis.setex(short_code, 3600, link.original_url)
+    except Exception as e:
+        print(f"[Redis] SET failed: {e}")
+
     return RedirectResponse(link.original_url)
 
 
 @router.delete("/links/{short_code}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_link(short_code: str, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
-    redis = await get_redis()
     result = await db.execute(select(Link).where(Link.short_code == short_code))
     link = result.scalar_one_or_none()
     if not link or link.user_id != current_user.id:
         raise HTTPException(status_code=404, detail="Link not found or not yours")
+
     await db.delete(link)
     await db.commit()
-    await redis.delete(short_code)
+
+    try:
+        redis = await get_redis()
+        await redis.delete(short_code)
+    except Exception as e:
+        print(f"[Redis] DELETE failed: {e}")
 
 
 @router.put("/links/{short_code}", response_model=LinkInfo)
 async def update_link(short_code: str, update_data: LinkUpdate, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
-    redis = await get_redis()
     result = await db.execute(select(Link).where(Link.short_code == short_code))
     link = result.scalar_one_or_none()
     if not link or link.user_id != current_user.id:
         raise HTTPException(status_code=404, detail="Link not found or not yours")
+
     link.original_url = update_data.original_url
     await db.commit()
     await db.refresh(link)
-    await redis.setex(short_code, 3600, link.original_url)
+
+    try:
+        redis = await get_redis()
+        await redis.setex(short_code, 3600, link.original_url)
+    except Exception as e:
+        print(f"[Redis] SET failed: {e}")
+
     return link
 
 
@@ -86,7 +110,6 @@ async def get_expired_links(db: AsyncSession = Depends(get_db)):
 
 @router.delete("/links/cleanup", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_old_links(days: int = Query(..., gt=0), db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
-    redis = await get_redis()
     cutoff_date = datetime.utcnow() - timedelta(days=days)
     result = await db.execute(
         select(Link).where(((Link.last_click < cutoff_date) | (Link.last_click.is_(None))) & (Link.user_id == current_user.id))
@@ -94,7 +117,11 @@ async def delete_old_links(days: int = Query(..., gt=0), db: AsyncSession = Depe
     old_links = result.scalars().all()
     for link in old_links:
         await db.delete(link)
-        await redis.delete(link.short_code)
+        try:
+            redis = await get_redis()
+            await redis.delete(link.short_code)
+        except Exception as e:
+            print(f"[Redis] DELETE in cleanup failed: {e}")
     await db.commit()
 
 

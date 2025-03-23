@@ -3,7 +3,6 @@ from app.api.main import router as link_router
 from app.auth.auth import router as auth_router
 import os
 from app.init_db import init_models
-import asyncio
 
 app = FastAPI(title="URL Shortener")
 
