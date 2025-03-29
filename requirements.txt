@@ -10,3 +10,10 @@ python-jose[cryptography]
 passlib[bcrypt]
 email-validator
 python-multipart
+pytest
+pytest-asyncio
+httpx
+pytest-mock
+coverage
+aiosqlite
+locust
